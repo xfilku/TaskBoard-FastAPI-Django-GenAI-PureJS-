@@ -1,0 +1,257 @@
+{% load static i18n %}
+{% language 'pl' %}
+    <!DOCTYPE html>
+    <html lang="pl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="theme-color" content="#f7f8f5">
+            <meta name="description"
+                  content="TaskBoard. Twoja spokojna przestrzeń na projekty, pomysły i codzienne zadania.">
+            <title>
+                {% block title %}
+                    {{ page_title|default:"TaskBoard | Twoja przestrzeń do działania" }}
+                {% endblock %}
+            </title>
+            <link rel="icon"
+                  type="image/svg+xml"
+                  href="{% static 'taskboard/favicon.svg' %}">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;650;700;750;800&display=swap"
+                  rel="stylesheet">
+            <link rel="stylesheet" href="{% static 'taskboard/site.css' %}">
+            {% block extra_head %}{% endblock %}
+        </head>
+        <body>
+            <a class="skip-link" href="#main-content">Przejdź do treści</a>
+            {% include "pages/_icons.html" %}
+            {% if request.session.access_token and request.resolver_match.url_name != "login" and request.resolver_match.url_name != "register" %}
+                <aside class="sidebar" id="sidebar" aria-label="Nawigacja główna">
+                    <a class="brand" href="{% url 'home' %}" translate="no">
+                        <span class="brand-mark" aria-hidden="true">
+                        </span>TaskBoard<span class="brand-dot">.</span>
+                    </a>
+                    <div class="workspace-name">
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-grid" />
+                        </svg>
+                        Moja przestrzeń<span class="tiny-dot" aria-hidden="true"></span>
+                    </div>
+                    <nav class="side-nav" aria-label="Przestrzeń robocza">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                           href="{% url 'home' %}"
+                           {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-grid" />
+                            </svg>
+                            Twoje tablice
+                            {% if boards %}
+                                <span class="nav-count">{{ boards|length }}</span>
+                            {% endif %}
+                        </a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'board_create' %}active{% endif %}"
+                           href="{% url 'board_create' %}"
+                           {% if request.resolver_match.url_name == 'board_create' %}aria-current="page"{% endif %}>
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-plus" />
+                            </svg>
+                            Nowa tablica
+                        </a>
+                        <button class="nav-link" type="button" data-open-help>
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-help" />
+                            </svg>
+                            Jak to działa
+                        </button>
+                    </nav>
+                    <div class="side-separator"></div>
+                    <p class="side-label">TWOJE PROJEKTY</p>
+                    <div class="board-shortcuts">
+                        {% for item in boards|slice:':5' %}
+                            <a class="board-shortcut" href="{% url 'board_detail' item.id %}">
+                                <span class="board-dot" aria-hidden="true"></span>
+                                <span>{{ item.name }}</span>
+                            </a>
+                        {% empty %}
+                            {% if board %}
+                                <a class="board-shortcut"
+                                   href="{% url 'board_detail' board.id %}"
+                                   aria-current="page">
+                                    <span class="board-dot" aria-hidden="true"></span>
+                                    <span>{{ board.name }}</span>
+                                </a>
+                            {% else %}
+                                <p class="side-empty">
+                                    Dobry pomysł zasługuje
+                                    <br>
+                                    na własną tablicę.
+                                </p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="sidebar-bottom">
+                        <div class="side-note">
+                            <p>
+                                Mniej chaosu.
+                                <br>
+                                Więcej zrobione.
+                            </p>
+                            <small>Jedno zadanie na dobry początek.</small>
+                        </div>
+                        <div class="profile">
+                            <span class="avatar" aria-hidden="true">TB</span>
+                            <div class="profile-copy">
+                                <strong>Twoja przestrzeń</strong>
+                                <small>Konto osobiste</small>
+                            </div>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="icon-btn"
+                                        aria-label="Wyloguj się"
+                                        title="Wyloguj się">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-logout" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </aside>
+                <button class="nav-shade"
+                        type="button"
+                        aria-label="Zamknij nawigację"
+                        tabindex="-1"
+                        hidden></button>
+            {% endif %}
+            <div class="{% if request.session.access_token and request.resolver_match.url_name != "login" and request.resolver_match.url_name != "register" %}app-main{% else %}auth-main{% endif %}">
+                {% if request.session.access_token and request.resolver_match.url_name != "login" and request.resolver_match.url_name != "register" %}
+                    <header class="topbar">
+                        <button class="icon-btn menu-toggle"
+                                type="button"
+                                aria-label="Otwórz nawigację"
+                                aria-expanded="false"
+                                aria-controls="sidebar">
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-menu" />
+                            </svg>
+                        </button>
+                        <div class="breadcrumbs">
+                            <a aria-label="Moja przestrzeń" href="{% url 'home' %}">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-home" />
+                                </svg>
+                                <span class="breadcrumb-home-label">Moja przestrzeń</span>
+                            </a>
+                            <span class="breadcrumb-divider" aria-hidden="true">/</span>
+                            <span>
+                                {% block breadcrumb %}
+                                    Twoje tablice
+                                {% endblock %}
+                            </span>
+                        </div>
+                        <div class="topbar-right">
+                            <time class="top-date" data-today>
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-calendar" />
+                                </svg>
+                                <span>{% now "j F Y" %}</span>
+                            </time>
+                            <span class="avatar top-avatar"
+                                  role="img"
+                                  aria-label="Konto osobiste">TB</span>
+                        </div>
+                    </header>
+                {% else %}
+                    <header class="auth-header">
+                        <a class="brand" href="{% url 'home' %}" translate="no">
+                            <span class="brand-mark" aria-hidden="true">
+                            </span>TaskBoard<span class="brand-dot">.</span>
+                        </a>
+                        <div class="auth-header-right">
+                            {% if request.resolver_match.url_name == "register" %}
+                                <span>Masz już konto?</span>
+                                <a href="{% url 'login' %}">Zaloguj się</a>
+                            {% else %}
+                                <span>Jeszcze Cię tu nie ma?</span>
+                                <a href="{% url 'register' %}">Utwórz konto</a>
+                            {% endif %}
+                        </div>
+                    </header>
+                {% endif %}
+                <main id="main-content"
+                      class="{% if request.session.access_token and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}content{% else %}auth-content{% endif %}"
+                      tabindex="-1">
+                    {% if messages %}
+                        <div aria-live="polite">
+                            {% for message in messages %}
+                                <div class="message {{ message.tags }}">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="{% if message.tags == 'error' %}#i-info{% else %}#i-check{% endif %}" />
+                                    </svg>
+                                    <span>{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% block content %}{% endblock %}
+                </main>
+                {% if request.session.access_token and request.resolver_match.url_name != "login" and request.resolver_match.url_name != "register" %}
+                    <footer class="page-footer">
+                        <span class="footer-mark">
+                            <span class="tiny-dot" aria-hidden="true"></span>
+                            <span translate="no">TaskBoard - Filip Dyszkiewicz</span> ©
+                            {% now "Y" %}
+                        </span>
+                        <span>Trochę porządku. Więcej przestrzeni.</span>
+                    </footer>
+                {% endif %}
+            </div>
+            <dialog id="confirm-dialog"
+                    aria-labelledby="confirm-title"
+                    aria-describedby="confirm-description">
+                <div class="editor-kicker-icon">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-trash" />
+                    </svg>
+                </div>
+                <h2 id="confirm-title">Chcesz to usunąć?</h2>
+                <p id="confirm-description"></p>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-secondary" data-close-dialog>
+                        Anuluj
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirm-submit">Usuń</button>
+                </div>
+            </dialog>
+            <dialog id="help-dialog" aria-labelledby="help-title">
+                <div class="editor-kicker-icon">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-spark" />
+                    </svg>
+                </div>
+                <h2 id="help-title">Od pomysłu do zrobione.</h2>
+                <p>Każdy projekt zaczyna się od pierwszego kroku.</p>
+                <ol class="help-steps">
+                    <li>
+                        <strong>Utwórz tablicę</strong> dla swojego projektu.
+                    </li>
+                    <li>
+                        <strong>Dodaj zadania</strong>, które chcesz wykonać.
+                    </li>
+                    <li>
+                        <strong>Odhaczaj postępy</strong> i rób miejsce na kolejne pomysły.
+                    </li>
+                </ol>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-primary" data-close-dialog>
+                        Wszystko jasne
+                    </button>
+                </div>
+            </dialog>
+            <script src="{% static 'taskboard/site.js' %}" defer></script>
+            {% block scripts %}{% endblock %}
+        </body>
+    </html>
+{% endlanguage %}

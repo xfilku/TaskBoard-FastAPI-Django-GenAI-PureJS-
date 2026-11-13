@@ -1,0 +1,14 @@
+{
+  "name": "taskboard-formatting",
+  "private": true,
+  "description": "Formatting tools for the Django frontend's plain CSS and JavaScript.",
+  "scripts": {
+    "format": "prettier --write frontend/pages/static/taskboard/*.{css,js,svg} frontend/e2e/*.js playwright.config.js",
+    "format:check": "prettier --check frontend/pages/static/taskboard/*.{css,js,svg} frontend/e2e/*.js playwright.config.js",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "prettier": "3.10.0"
+  }
+}

@@ -1,0 +1,156 @@
+{% extends "pages/base.html" %}
+{% block content %}
+    <div class="entrance">
+        <div class="page-heading home-heading">
+            <div>
+                <span class="heading-kicker">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-spark" />
+                    </svg>
+                TWOJA PRZESTRZEŃ DO DZIAŁANIA</span>
+                <h1>Przestrzeń na dobre pomysły.</h1>
+                <p>Zbierz plany w jednym miejscu. Reszta zaczyna się od małego kroku.</p>
+            </div>
+            <a class="btn btn-primary" href="{% url 'board_create' %}">
+                <svg class="icon" aria-hidden="true">
+                    <use href="#i-plus" />
+                </svg>
+                Nowa tablica
+            </a>
+        </div>
+        {% if error_message %}
+            <section class="error-panel" role="alert">
+                <h2>Nie udało się wczytać tablic.</h2>
+                <p>{{ error_message }}</p>
+                <a class="btn btn-secondary" href="{% url 'home' %}">Spróbuj ponownie</a>
+            </section>
+        {% else %}
+            <section class="welcome" aria-labelledby="welcome-title">
+                <div class="welcome-copy">
+                    <p class="eyebrow">DOBRZE MIEĆ SWÓJ PLAN</p>
+                    <h2 id="welcome-title">
+                        Wielkie rzeczy.
+                        <br>
+                        <span class="serif">Małe kroki.</span>
+                    </h2>
+                    <p>
+                        Od luźnej myśli do ostatniego zadania.
+                        <br>
+                        Daj swoim projektom miejsce do rozwoju.
+                    </p>
+                </div>
+                <div class="welcome-art" aria-hidden="true">
+                    <div class="art-orbit"></div>
+                    <div class="arch"></div>
+                    <div class="arch arch-small"></div>
+                    <div class="art-step"></div>
+                </div>
+            </section>
+            <section aria-labelledby="boards-heading">
+                <div class="section-toolbar">
+                    <div class="section-title">
+                        <h2 id="boards-heading">Twoje tablice</h2>
+                        <span class="count-badge" title="Liczba tablic">{{ boards|length }}</span>
+                    </div>
+                    {% if boards %}
+                        <div class="toolbar-actions" data-home-tools hidden>
+                            <label class="search-box">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-search" />
+                                </svg>
+                                <span class="sr-only">Szukaj tablic</span>
+                                <input type="search"
+                                       id="board-search"
+                                       placeholder="Szukaj tablic…"
+                                       autocomplete="off"
+                                       name="q">
+                                <kbd aria-hidden="true">Ctrl K</kbd>
+                            </label>
+                            <div class="view-toggle" role="group" aria-label="Widok tablic">
+                                <button class="icon-btn"
+                                        type="button"
+                                        data-view="grid"
+                                        aria-label="Widok kafelków"
+                                        aria-pressed="true">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-grid" />
+                                    </svg>
+                                </button>
+                                <button class="icon-btn"
+                                        type="button"
+                                        data-view="list"
+                                        aria-label="Widok listy"
+                                        aria-pressed="false">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-list" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="boards-grid" id="boards-grid">
+                    {% for board in boards %}
+                        <a class="board-card"
+                           data-board-name="{{ board.name }}"
+                           href="{% url 'board_detail' board.id %}">
+                            <div class="board-cover" aria-hidden="true">
+                                <div class="cover-art {% cycle 'cover-sage' 'cover-clay' 'cover-sand' 'cover-blue' 'cover-rose' 'cover-olive' %}">
+                                </div>
+                                <span class="board-cover-number">TABLICA / {{ forloop.counter|stringformat:'02d' }}</span>
+                            </div>
+                            <div class="board-card-content">
+                                <h3>{{ board.name }}</h3>
+                                <div class="board-meta">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-folder" />
+                                    </svg>
+                                    <span>Twoja przestrzeń na zadania</span>
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-arrow" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="empty-state">
+                            <div class="empty-symbol">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-grid" />
+                                </svg>
+                            </div>
+                            <h2>Tu zaczyna się coś dobrego.</h2>
+                            <p>
+                                Masz pomysł na projekt? Utwórz pierwszą tablicę i dodaj rzeczy, które chcesz zrobić.
+                            </p>
+                            <a class="btn btn-primary" href="{% url 'board_create' %}">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-plus" />
+                                </svg>
+                                Utwórz pierwszą tablicę
+                            </a>
+                        </div>
+                    {% endfor %}
+                    {% if boards %}
+                        <a class="new-board-card" href="{% url 'board_create' %}">
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-plus" />
+                            </svg>
+                            <strong>Miejsce na kolejny pomysł</strong>
+                            <small>Utwórz nową tablicę</small>
+                        </a>
+                    {% endif %}
+                </div>
+                <p class="empty-search" id="no-boards-found" role="status" hidden>
+                    Nie ma tablic o takiej nazwie. Spróbuj innego słowa.
+                </p>
+                <p class="home-note">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-leaf" />
+                    </svg>
+                    Nie musisz mieć całego planu. Wystarczy pierwsze zadanie.
+                </p>
+            </section>
+        {% endif %}
+    </div>
+{% endblock %}

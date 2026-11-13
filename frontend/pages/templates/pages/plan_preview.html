@@ -1,0 +1,339 @@
+{% extends "pages/base.html" %}
+{% block title %}
+    Planowanie z AI | TaskBoard
+{% endblock %}
+{% block breadcrumb %}
+    Planowanie z AI
+{% endblock %}
+{% block content %}
+    <div class="ai-page entrance">
+        <a class="back-link" href="{% url 'board_detail' board_id %}">
+            <svg class="icon" aria-hidden="true">
+                <use href="#i-back" />
+            </svg>
+            Wróć do tablicy
+        </a>
+        {% if error_message %}
+            <section class="error-panel" role="alert">
+                <h1 class="error-heading">Nie możemy otworzyć planera.</h1>
+                <p class="error-description">{{ error_message }}</p>
+                <a class="btn btn-secondary" href="{% url 'home' %}">Wróć do swoich tablic</a>
+            </section>
+        {% else %}
+            <header class="ai-hero">
+                <div class="ai-hero-copy">
+                    <span class="ai-brand">
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-spark" />
+                        </svg>
+                        TASKBOARD <strong>AI</strong>
+                    </span>
+                    <h1>
+                        Ty wyznaczasz cel.
+                        <br>
+                        <span>AI układa kroki.</span>
+                    </h1>
+                    <p>
+                        Opisz, co chcesz zrobić. Przejrzyj propozycje i wybierz zadania, które trafią na Twoją tablicę.
+                    </p>
+                    <span class="ai-board-label">
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-folder" />
+                        </svg>
+                    {{ board.name }}</span>
+                </div>
+                <div class="ai-hero-art" aria-hidden="true">
+                    <div class="ai-orbit ai-orbit-one"></div>
+                    <div class="ai-orbit ai-orbit-two"></div>
+                    <div class="ai-core">
+                        <svg viewBox="0 0 64 64">
+                            <path d="M32 6c3 17 9 23 26 26-17 3-23 9-26 26C29 41 23 35 6 32 23 29 29 23 32 6Z" />
+                        </svg>
+                    </div>
+                    <span class="ai-orbit-node ai-node-one"></span>
+                    <span class="ai-orbit-node ai-node-two"></span>
+                    <span class="ai-art-word">AI</span>
+                </div>
+            </header>
+            <div class="ai-workspace">
+                <section class="ai-brief-panel" aria-labelledby="ai-brief-title">
+                    <div class="ai-section-kicker">
+                        <span>01</span> TWÓJ POMYSŁ
+                    </div>
+                    <h2 id="ai-brief-title">Od czego zaczynamy?</h2>
+                    <p class="ai-section-description">
+                        Im konkretniejszy cel, tym łatwiej rozłożyć go na zadania.
+                    </p>
+                    <form method="post"
+                          action="{% url 'plan_preview' board_id %}"
+                          data-ai-generate
+                          data-dirty-guard>
+                        {% csrf_token %}
+                        {% if plan_preview_form.non_field_errors %}
+                            <div role="alert">
+                                <ul class="non-field-errors">
+                                    {% for error in plan_preview_form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        <div class="ai-goal-field">
+                            <label for="{{ plan_preview_form.goal.id_for_label }}">{{ plan_preview_form.goal.label }}</label>
+                            {{ plan_preview_form.goal }}
+                            <div class="ai-field-meta" id="goal-help">
+                                <span>Od 5 do 1000 znaków.</span>
+                                <span data-ai-char-count aria-live="off">0 / 1000</span>
+                            </div>
+                            {% if plan_preview_form.goal.errors %}
+                                <div role="alert">
+                                    <ul class="field-errors">
+                                        {% for error in plan_preview_form.goal.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="ai-examples" data-ai-examples hidden>
+                            <span>Możesz zacząć od:</span>
+                            <div>
+                                <button type="button"
+                                        data-ai-example="Chcę przygotować stronę portfolio z trzema projektami, opisem umiejętności i formularzem kontaktowym.">
+                                    Portfolio
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-arrow" />
+                                    </svg>
+                                </button>
+                                <button type="button"
+                                        data-ai-example="Chcę powtórzyć podstawy Pythona, przećwiczyć pracę z bazą danych i napisać małą aplikację w Django.">
+                                    Nauka
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-arrow" />
+                                    </svg>
+                                </button>
+                                <button type="button"
+                                        data-ai-example="Chcę zaplanować nowy projekt od zebrania wymagań i pierwszego prototypu do testów i prezentacji.">
+                                    Nowy projekt
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-arrow" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <fieldset class="ai-range">
+                            <legend>Ile zadań potrzebujesz?</legend>
+                            <div class="ai-range-fields">
+                                <div>
+                                    <label for="{{ plan_preview_form.min_elements.id_for_label }}">Minimum</label>{{ plan_preview_form.min_elements }}
+                                    {% for error in plan_preview_form.min_elements.errors %}
+                                        <p class="field-errors"
+                                           id="{{ plan_preview_form.min_elements.id_for_label }}_error"
+                                           role="alert">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <span class="ai-range-divider" aria-hidden="true">—</span>
+                                <div>
+                                    <label for="{{ plan_preview_form.max_elements.id_for_label }}">Maksimum</label>{{ plan_preview_form.max_elements }}
+                                    {% for error in plan_preview_form.max_elements.errors %}
+                                        <p class="field-errors"
+                                           id="{{ plan_preview_form.max_elements.id_for_label }}_error"
+                                           role="alert">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p>AI dopasuje liczbę propozycji do tego zakresu. Maksymalnie 50.</p>
+                        </fieldset>
+                        <button class="btn btn-ai ai-generate-button" type="submit">
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-spark" />
+                            </svg>
+                            <span data-ai-idle>
+                                {% if task_suggestion_formset.forms %}
+                                    Ułóż nowy plan
+                                {% else %}
+                                    Ułóż plan z AI
+                                {% endif %}
+                            </span>
+                            <span data-ai-busy hidden>Układam Twój plan…</span>
+                            <svg class="icon ai-button-arrow" aria-hidden="true">
+                                <use href="#i-arrow" />
+                            </svg>
+                        </button>
+                        <p class="ai-submit-note">
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-check" />
+                            </svg>
+                            Najpierw podgląd. Ty decydujesz, co zapisać.
+                        </p>
+                        <div class="ai-loading"
+                             data-ai-loading
+                             hidden
+                             role="status"
+                             aria-live="polite">
+                            <div class="ai-loading-dots" aria-hidden="true">
+                                <span aria-hidden="true"></span>
+                                <span aria-hidden="true"></span>
+                                <span aria-hidden="true"></span>
+                            </div>
+                            <strong>AI przygotowuje propozycje.</strong>
+                            <p>To może potrwać kilkadziesiąt sekund. Poczekaj na gotowy plan.</p>
+                        </div>
+                    </form>
+                    {% if provider == "demo" %}
+                        <p class="ai-demo-note">
+                            <strong>Tryb demonstracyjny.</strong> Zobaczysz przykładowe zadania, bez użycia modelu AI.
+                        </p>
+                    {% endif %}
+                </section>
+                <section class="ai-results-panel" aria-labelledby="ai-results-title">
+                    <div class="ai-results-heading">
+                        <div>
+                            <div class="ai-section-kicker">
+                                <span>02</span> TWÓJ PLAN
+                            </div>
+                            <h2 id="ai-results-title">
+                                {% if task_suggestion_formset.forms %}
+                                    Gotowe na pierwszy krok.
+                                {% else %}
+                                    Z pomysłu w działanie.
+                                {% endif %}
+                            </h2>
+                        </div>
+                        {% if task_suggestion_formset.forms %}
+                            <span class="ai-result-badge">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-check" />
+                                </svg>
+                            Do przejrzenia</span>
+                        {% endif %}
+                    </div>
+                    {% if task_suggestion_formset.forms or task_suggestion_formset.is_bound %}
+                        <form method="post"
+                              action="{% url 'save_plan' board_id %}"
+                              data-ai-review
+                              data-dirty-guard>
+                            {% csrf_token %}
+                            {{ task_suggestion_formset.management_form }}
+                            <input type="hidden"
+                                   name="goal"
+                                   value="{{ plan_preview_form.goal.value|default_if_none:'' }}">
+                            <input type="hidden"
+                                   name="min_elements"
+                                   value="{{ plan_preview_form.min_elements.value|default_if_none:1 }}">
+                            <input type="hidden"
+                                   name="max_elements"
+                                   value="{{ plan_preview_form.max_elements.value|default_if_none:10 }}">
+                            <input type="hidden" name="plan_provider" value="{{ provider }}">
+                            <p class="ai-results-description">
+                                Doprecyzuj treść lub pomiń propozycje. Nic nie trafi na tablicę bez Twojego zatwierdzenia.
+                            </p>
+                            {% if save_error %}
+                                <p class="ai-save-error" role="alert">{{ save_error }}</p>
+                            {% endif %}
+                            {% if task_suggestion_formset.non_form_errors %}
+                                <div role="alert">
+                                    <ul class="non-field-errors">
+                                        {% for error in task_suggestion_formset.non_form_errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                            <div class="ai-suggestions">
+                                {% for suggestion in task_suggestion_formset %}
+                                    <article class="ai-suggestion {% if suggestion.DELETE.value %}is-skipped{% endif %}"
+                                             data-ai-suggestion>
+                                        <span class="ai-suggestion-number"
+                                              aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+                                        <div class="ai-suggestion-content">
+                                            <label for="{{ suggestion.title.id_for_label }}">Zadanie {{ forloop.counter }}</label>
+                                            {{ suggestion.title }}
+                                            {% if suggestion.title.errors %}
+                                                <div role="alert">
+                                                    <ul class="field-errors"
+                                                        id="{{ suggestion.title.id_for_label }}_error">
+                                                        {% for error in suggestion.title.errors %}
+                                                            <li>{{ error }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <label class="ai-skip-toggle"
+                                               for="{{ suggestion.DELETE.id_for_label }}">
+                                            {{ suggestion.DELETE }}<span>Pomiń</span>
+                                        </label>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                            <div class="ai-save-bar">
+                                <p role="status" aria-live="polite">
+                                    <strong data-ai-selected-count>{{ selected_count }}</strong>
+                                    <span>zadań do dodania</span>
+                                </p>
+                                <button type="submit" class="btn btn-ai-save" data-ai-save>
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-plus" />
+                                    </svg>
+                                    Dodaj wybrane zadania
+                                </button>
+                            </div>
+                            <p class="ai-review-note">
+                                Propozycje AI mogą wymagać poprawek. Przejrzyj je przed dodaniem.
+                            </p>
+                        </form>
+                    {% else %}
+                        <div class="ai-empty-plan">
+                            <div class="ai-plan-illustration" aria-hidden="true">
+                                <span class="ai-illustration-star">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-spark" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <span>01</span>
+                                    <i aria-hidden="true">
+                                    </i>
+                                    <b aria-hidden="true">
+                                    </b>
+                                </div>
+                                <div>
+                                    <span>02</span>
+                                    <i aria-hidden="true">
+                                    </i>
+                                    <b aria-hidden="true">
+                                    </b>
+                                </div>
+                                <div>
+                                    <span>03</span>
+                                    <i aria-hidden="true">
+                                    </i>
+                                    <b aria-hidden="true">
+                                    </b>
+                                </div>
+                            </div>
+                            <h3>Tu pojawi się Twój plan.</h3>
+                            <p>
+                                Jedno zdanie wystarczy, żeby zacząć.
+                                <br>
+                                Resztę ułożysz po swojemu.
+                            </p>
+                            <ol class="ai-process">
+                                <li>
+                                    <span>1</span>Opisz cel
+                                </li>
+                                <li>
+                                    <span>2</span>Dopasuj propozycje
+                                </li>
+                                <li>
+                                    <span>3</span>Dodaj wybrane
+                                </li>
+                            </ol>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

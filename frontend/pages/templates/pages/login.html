@@ -1,0 +1,42 @@
+{% extends "pages/base.html" %}
+{% block content %}
+    <div class="auth-layout entrance">
+        {% include "pages/_auth_visual.html" %}
+        <section class="auth-form-wrap" aria-labelledby="login-heading">
+            <div class="auth-form-inner">
+                <p class="eyebrow">WRÓĆ DO SWOICH POMYSŁÓW</p>
+                <h1 id="login-heading">Miło Cię widzieć.</h1>
+                <p class="auth-intro">
+                    Twoje projekty czekają na kolejny krok.
+                    <br>
+                    Zaloguj się i wróć do działania.
+                </p>
+                <form action="{% url 'login' %}" method="post">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div role="alert">
+                            <ul class="non-field-errors">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    {% include "pages/_form_field.html" with field=form.email type="email" label="Adres e-mail" placeholder="ty@przyklad.pl" autocomplete="email" %}
+                    {% include "pages/_form_field.html" with field=form.password type="password" label="Hasło" placeholder="Wpisz swoje hasło…" autocomplete="current-password" %}
+                    <button class="btn btn-primary auth-submit" type="submit">
+                        Zaloguj się
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-arrow" />
+                        </svg>
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    Dopiero zaczynasz?
+                    <a class="text-link" href="{% url 'register' %}">Utwórz konto</a>
+                </p>
+                <p class="auth-fine-print">Mały krok dzisiaj. Więcej przestrzeni jutro.</p>
+            </div>
+        </section>
+    </div>
+{% endblock %}

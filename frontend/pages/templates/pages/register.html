@@ -1,0 +1,47 @@
+{% extends "pages/base.html" %}
+{% block content %}
+    <div class="auth-layout entrance">
+        {% include "pages/_auth_visual.html" %}
+        <section class="auth-form-wrap" aria-labelledby="register-heading">
+            <div class="auth-form-inner">
+                <p class="eyebrow">MIEJSCE NA TWÓJ NASTĘPNY KROK</p>
+                <h1 id="register-heading">Zacznij coś dobrego.</h1>
+                <p class="auth-intro">
+                    Załóż konto i stwórz własną przestrzeń
+                    <br>
+                    na projekty, plany i codzienne zadania.
+                </p>
+                <form action="{% url 'register' %}" method="post">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div role="alert">
+                            <ul class="non-field-errors">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    {% include "pages/_form_field.html" with field=form.email type="email" label="Adres e-mail" placeholder="ty@przyklad.pl" autocomplete="email" %}
+                    {% include "pages/_form_field.html" with field=form.password type="password" label="Twoje hasło" placeholder="Wymyśl swoje hasło…" autocomplete="new-password" %}
+                    <p class="field-help password-hint">Hasło musi mieć co najmniej 5 znaków.</p>
+                    <button class="btn btn-primary auth-submit" type="submit">
+                        Utwórz konto
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-arrow" />
+                        </svg>
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    Masz już swoją przestrzeń?
+                    <a class="text-link" href="{% url 'login' %}">Zaloguj się</a>
+                </p>
+                <p class="auth-fine-print">
+                    Jeden pomysł to dobry początek.
+                    <br>
+                    Resztę rozłożysz na małe kroki.
+                </p>
+            </div>
+        </section>
+    </div>
+{% endblock %}

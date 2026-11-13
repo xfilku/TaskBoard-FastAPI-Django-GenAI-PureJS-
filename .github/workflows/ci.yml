@@ -1,0 +1,58 @@
+name: Code quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Generate ephemeral test secrets
+        run: |
+          python - <<'PY'
+          import os
+          import secrets
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              for name in ("TASKBOARD_JWT_SECRET", "DJANGO_SECRET_KEY"):
+                  env.write(f"{name}={secrets.token_urlsafe(48)}\n")
+          PY
+      - name: Check Python lint and docstrings
+        run: ruff check .
+      - name: Check Python formatting
+        run: ruff format --check .
+      - name: Check Django template formatting
+        run: djlint frontend/pages/templates --check --lint
+      - name: Check Django configuration
+        run: python frontend/manage.py check
+      - name: Test API authorization and CRUD
+        run: python -m pytest backend -q
+      - name: Test Django forms and API error handling
+        run: python frontend/manage.py test pages
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install formatting tools
+        run: npm ci --ignore-scripts
+      - name: Check static file formatting and JavaScript syntax
+        run: |
+          npm run format:check
+          node --check frontend/pages/static/taskboard/site.js
+      - name: Install browser for AI workflow tests
+        run: npx playwright install --with-deps chromium
+      - name: Test AI workflow in the browser
+        run: npm run test:e2e

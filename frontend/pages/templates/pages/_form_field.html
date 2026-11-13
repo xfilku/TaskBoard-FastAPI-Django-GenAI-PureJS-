@@ -1,0 +1,37 @@
+<div class="form-field">
+    <label for="{{ field.id_for_label }}">{{ label|default:field.label }}</label>
+    <div class="input-wrap">
+        <input id="{{ field.id_for_label }}"
+               name="{{ field.html_name }}"
+               type="{{ type|default:'text' }}"
+               {% if type != 'password' %}value="{{ field.value|default_if_none:'' }}"{% else %}data-password{% endif %}
+               autocomplete="{{ autocomplete|default:'off' }}"
+               placeholder="{{ placeholder|default:'' }}"
+               {% if field.field.required %}required{% endif %}
+               {% if field.field.min_length %}minlength="{{ field.field.min_length }}"{% endif %}
+               {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %}
+               {% if type == 'email' %}inputmode="email" spellcheck="false"{% endif %}
+               {% if field.errors %}aria-invalid="true" aria-describedby="{{ field.id_for_label }}_errors"{% endif %}>
+        {% if type == "password" %}
+            <button class="icon-btn password-toggle"
+                    type="button"
+                    data-password-toggle
+                    aria-label="Pokaż hasło"
+                    aria-controls="{{ field.id_for_label }}"
+                    aria-pressed="false">
+                <svg class="icon" aria-hidden="true">
+                    <use href="#i-eye" />
+                </svg>
+            </button>
+        {% endif %}
+    </div>
+    {% if field.errors %}
+        <div role="alert">
+            <ul class="field-errors" id="{{ field.id_for_label }}_errors">
+                {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>

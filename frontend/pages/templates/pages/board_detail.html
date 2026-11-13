@@ -1,0 +1,265 @@
+{% extends "pages/base.html" %}
+{% block title %}
+    {{ board.name|default:'Tablica' }} | TaskBoard
+{% endblock %}
+{% block breadcrumb %}
+    {{ board.name|default:'Twoja tablica' }}
+{% endblock %}
+{% block content %}
+    <div class="entrance">
+        <a class="back-link" href="{% url 'home' %}">
+            <svg class="icon" aria-hidden="true">
+                <use href="#i-back" />
+            </svg>
+            Wróć do tablic
+        </a>
+        {% if error_message %}
+            <section class="error-panel" role="alert">
+                <h1 class="error-heading">Nie możemy otworzyć tej tablicy.</h1>
+                <p class="error-description">{{ error_message }}</p>
+                <a class="btn btn-secondary" href="{% url 'home' %}">Wróć do swoich tablic</a>
+            </section>
+        {% else %}
+            <div class="page-heading detail-heading">
+                <div>
+                    <span class="board-indicator">
+                        <span class="board-dot" aria-hidden="true"></span>TWOJA TABLICA</span>
+                    <h1>{{ board.name }}</h1>
+                    <p>Jeden krok bliżej. Wszystkie zadania w jednym miejscu.</p>
+                </div>
+                <a class="btn btn-secondary" href="#id_title" data-focus-task>
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-plus" />
+                    </svg>
+                    Nowe zadanie
+                </a>
+            </div>
+            <a class="ai-launchpad" href="{% url 'plan_preview' board.id %}">
+                <div class="ai-launchpad-art" aria-hidden="true">
+                    <span>AI</span>
+                    <svg class="icon">
+                        <use href="#i-spark" />
+                    </svg>
+                </div>
+                <div class="ai-launchpad-copy">
+                    <span class="ai-brand">TASKBOARD <strong>AI</strong>
+                    </span>
+                    <h2>Masz cel. Teraz dodaj plan.</h2>
+                    <p>Rozłóż pomysł na zadania z AI. Przejrzyj, dopasuj i dodaj wybrane.</p>
+                </div>
+                <span class="ai-launchpad-action">Zaplanuj z AI
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-arrow" />
+                    </svg>
+                </span>
+            </a>
+            <div class="detail-layout">
+                <section class="tasks-panel" aria-label="Zadania na tablicy">
+                    <form class="task-composer" method="post">
+                        {% csrf_token %}
+                        <h2 class="composer-title">
+                            <svg class="icon" aria-hidden="true">
+                                <use href="#i-edit" />
+                            </svg>
+                            Co jest do zrobienia?
+                        </h2>
+                        {% if task_form.non_field_errors %}
+                            <div role="alert">
+                                <ul class="non-field-errors">
+                                    {% for error in task_form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        <div class="composer-fields">
+                            {% include "pages/_form_field.html" with field=task_form.title label="Treść nowego zadania" placeholder="Zapisz swój następny krok…" %}
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-plus" />
+                                </svg>
+                                Dodaj zadanie
+                            </button>
+                        </div>
+                    </form>
+                    <div class="task-toolbar">
+                        <div class="filter-group"
+                             role="group"
+                             aria-label="Filtruj zadania"
+                             data-task-filters
+                             hidden>
+                            <button class="filter-btn"
+                                    type="button"
+                                    data-filter="all"
+                                    aria-pressed="true">
+                                Wszystkie<span>{{ tasks|length }}</span>
+                            </button>
+                            <button class="filter-btn"
+                                    type="button"
+                                    data-filter="todo"
+                                    aria-pressed="false">
+                                Do zrobienia<span data-count-todo></span>
+                            </button>
+                            <button class="filter-btn"
+                                    type="button"
+                                    data-filter="done"
+                                    aria-pressed="false">
+                                Zrobione<span data-count-done></span>
+                            </button>
+                        </div>
+                        <noscript>
+                            <h2 class="tasks-title">Zadania ({{ tasks|length }})</h2>
+                        </noscript>
+                    </div>
+                    <div class="task-list" id="task-list">
+                        {% for task in tasks %}
+                            <article class="task-row {% if task.is_done %}is-done{% endif %}"
+                                     data-task-state="{% if task.is_done %}done{% else %}todo{% endif %}">
+                                <form class="task-toggle-form"
+                                      action="{% url 'update_task' board.id task.id %}"
+                                      method="post">
+                                    {% csrf_token %}
+                                    <button class="task-check"
+                                            type="submit"
+                                            name="is_done"
+                                            value="{% if task.is_done %}false{% else %}true{% endif %}"
+                                            aria-label="{% if task.is_done %}Oznacz jako do zrobienia{% else %}Oznacz jako wykonane{% endif %}: {{ task.title }}"
+                                            title="{% if task.is_done %}Oznacz jako do zrobienia{% else %}Oznacz jako wykonane{% endif %}">
+                                        {% if task.is_done %}
+                                            <svg class="icon" aria-hidden="true">
+                                                <use href="#i-check" />
+                                            </svg>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <div class="task-copy">
+                                    <a class="task-title"
+                                       href="{% url 'edit_task' board.id task.id %}">{{ task.title }}
+                                    </a>
+                                    <div class="task-subtitle">
+                                        <span translate="no">TB-{{ task.id|stringformat:'03d' }}</span>
+                                        <span aria-hidden="true">/</span>
+                                        <span class="task-state">
+                                            {% if task.is_done %}
+                                                Zrobione
+                                            {% else %}
+                                                Do zrobienia
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="task-actions">
+                                    <a class="icon-btn"
+                                       href="{% url 'edit_task' board.id task.id %}"
+                                       aria-label="Edytuj zadanie: {{ task.title }}"
+                                       title="Edytuj zadanie">
+                                        <svg class="icon" aria-hidden="true">
+                                            <use href="#i-edit" />
+                                        </svg>
+                                    </a>
+                                    <form action="{% url 'delete_task' board.id task.id %}"
+                                          method="post"
+                                          data-confirm="Usunąć zadanie „{{ task.title }}”? Tej zmiany nie można cofnąć.">
+                                        {% csrf_token %}
+                                        <button class="icon-btn delete-btn"
+                                                type="submit"
+                                                aria-label="Usuń zadanie: {{ task.title }}"
+                                                title="Usuń zadanie">
+                                            <svg class="icon" aria-hidden="true">
+                                                <use href="#i-trash" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="empty-state">
+                                <div class="empty-symbol">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-check" />
+                                    </svg>
+                                </div>
+                                <h2>Pierwszy krok należy do Ciebie.</h2>
+                                <p>
+                                    Tablica jest gotowa. Dodaj pierwsze zadanie, korzystając z pola powyżej.
+                                </p>
+                                <a class="text-link"
+                                   href="#id_title"
+                                   data-focus-task>Dodaj pierwsze zadanie</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <p class="empty-search" id="no-tasks-found" role="status" hidden>
+                        Nie ma jeszcze zadań z tym statusem.
+                    </p>
+                    <div class="board-danger-zone">
+                        <span>
+                            <svg class="icon inline-info-icon" aria-hidden="true">
+                                <use href="#i-info" />
+                            </svg>
+                            {% if tasks %}
+                                Tablicę możesz usunąć po usunięciu wszystkich zadań.
+                            {% else %}
+                                Nie potrzebujesz już tej tablicy?
+                            {% endif %}
+                        </span>
+                        {% if not tasks %}
+                            <form action="{% url 'delete_board' board.id %}"
+                                  method="post"
+                                  data-confirm="Usunąć tablicę „{{ board.name }}”? Tej zmiany nie można cofnąć.">
+                                {% csrf_token %}
+                                <button class="btn btn-danger" type="submit">
+                                    <svg class="icon icon-small" aria-hidden="true">
+                                        <use href="#i-trash" />
+                                    </svg>
+                                    Usuń tablicę
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </section>
+                <aside class="detail-aside">
+                    <section class="progress-card"
+                             data-progress
+                             hidden
+                             aria-labelledby="progress-title">
+                        <h2 id="progress-title">Twój postęp</h2>
+                        <p>Każde odhaczone zadanie ma znaczenie.</p>
+                        <div class="progress-ring"
+                             role="progressbar"
+                             aria-label="Ukończone zadania"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             aria-valuenow="0">
+                            <div class="ring-inner">
+                                <span class="ring-value" data-progress-value>0%</span>
+                                <span class="ring-caption">zrobione</span>
+                            </div>
+                        </div>
+                        <div class="progress-stats">
+                            <span>Do zrobienia</span>
+                            <strong data-count-todo></strong>
+                        </div>
+                        <div class="progress-stats">
+                            <span>Zrobione</span>
+                            <strong data-count-done></strong>
+                        </div>
+                    </section>
+                    <div class="focus-note">
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-leaf" />
+                        </svg>
+                        <p>
+                            Spokojnie.
+                            <br>
+                            Po jednym kroku.
+                        </p>
+                        <small>Nie wszystko naraz.
+                            <br>
+                        Wybierz jedno zadanie i zacznij właśnie od niego.</small>
+                    </div>
+                </aside>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -23,13 +23,30 @@ def test_task_creation_uses_the_authorized_board_and_defaults(
 
     assert response.status_code == 201
     task = response.json()
-    assert set(task) == {"id", "title", "is_done", "board_id"}
+    assert set(task) == {"id", "title", "is_done", "board_id", "deadline"}
     assert task["title"] == "New task"
     assert task["board_id"] == board["id"]
     assert task["is_done"] is False
+    assert task["deadline"] is None
     stored_task = db_session.get(Task, task["id"])
     assert stored_task.title == task["title"]
     assert stored_task.board_id == board["id"]
+
+
+def test_task_creation_persists_deadline(client, auth_headers, board):
+    path = f"/boards/{board['id']}/tasks"
+    deadline = "2026-11-30"
+    response = client.post(
+        path, json={"title": "Prepare the demo", "deadline": deadline}, headers=auth_headers
+    )
+
+    assert response.status_code == 201
+    task = response.json()
+    assert task["deadline"] == deadline
+
+    read = client.get(f"{path}/{task['id']}", headers=auth_headers)
+    assert read.status_code == 200
+    assert read.json()["deadline"] == deadline
 
 
 def test_task_lists_are_scoped_to_the_requested_board(client, auth_headers, board, task):
@@ -77,6 +94,25 @@ def test_task_patch_preserves_unspecified_fields(client, auth_headers, board, ta
     assert response.status_code == 200
     assert response.json() == expected
     assert client.get(path, headers=auth_headers).json() == expected
+
+
+def test_task_patch_preserves_omitted_deadline_and_clears_explicit_null(
+    client, auth_headers, board, task
+):
+    path = f"/boards/{board['id']}/tasks/{task['id']}"
+    deadline = "2026-11-30"
+    scheduled = client.patch(path, json={"deadline": deadline}, headers=auth_headers)
+    assert scheduled.status_code == 200
+    assert scheduled.json()["deadline"] == deadline
+
+    completed = client.patch(path, json={"is_done": True}, headers=auth_headers)
+    assert completed.status_code == 200
+    assert completed.json()["deadline"] == deadline
+
+    cleared = client.patch(path, json={"deadline": None}, headers=auth_headers)
+    assert cleared.status_code == 200
+    assert cleared.json()["deadline"] is None
+    assert client.get(path, headers=auth_headers).json()["deadline"] is None
 
 
 def test_completed_task_can_be_reopened(client, auth_headers, board, task):
@@ -216,8 +252,14 @@ def test_task_creation_in_a_legacy_board_is_forbidden(client, auth_headers, db_s
 
 @pytest.mark.parametrize(
     "payload",
-    [{"title": "abcd"}, {"title": "x" * 301}, {"title": None}, {}],
-    ids=["too-short", "too-long", "null", "missing"],
+    [
+        {"title": "abcd"},
+        {"title": "x" * 301},
+        {"title": None},
+        {},
+        {"title": "New task", "deadline": "2026-02-30"},
+    ],
+    ids=["too-short", "too-long", "null", "missing", "invalid-deadline"],
 )
 def test_invalid_task_creation_writes_no_task(client, auth_headers, board, db_session, payload):
     response = client.post(f"/boards/{board['id']}/tasks", json=payload, headers=auth_headers)

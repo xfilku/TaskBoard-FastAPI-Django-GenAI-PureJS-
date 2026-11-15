@@ -24,7 +24,7 @@ def create_task(
     """Add an unfinished task to the owned board identified by the URL."""
     board = get_own_board(board_id=board_id, user=user, db=db)
 
-    new_task = Task(title=task.title, is_done=False, board_id=board.id)
+    new_task = Task(title=task.title, is_done=False, board_id=board.id, deadline=task.deadline)
 
     db.add(new_task)
     db.commit()
@@ -45,7 +45,7 @@ def create_tasks(
     tasks = []
 
     for task in data.tasks:
-        tasks.append(Task(title=task.title, board_id=board.id, is_done=False))
+        tasks.append(Task(title=task.title, board_id=board.id, is_done=False, deadline=task.deadline))
 
     db.add_all(tasks)
     db.flush()

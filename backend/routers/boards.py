@@ -56,7 +56,7 @@ def create_board(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    new_board = Board(name=board.name, owner_id=user.id)
+    new_board = Board(name=board.name, owner_id=user.id, deadline=board.deadline)
 
     db.add(new_board)
     db.commit()

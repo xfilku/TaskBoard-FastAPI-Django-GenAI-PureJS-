@@ -40,7 +40,7 @@ def test_preview_returns_editable_proposals_without_writing_tasks(
     response = preview(client, board, auth_headers)
     assert response.status_code == 200
     assert response.json() == {
-        "tasks": [{"title": "Prepare the project outline"}],
+        "tasks": [{"title": "Prepare the project outline", "deadline": None}],
         "provider": "ollama",
     }
     assert task_count(db_session) == 0
@@ -191,6 +191,29 @@ def test_batch_creates_only_path_scoped_unfinished_tasks(client, board, auth_hea
     )
     assert response.json()[0]["title"] == "Reviewed task one"
     assert task_count(db_session) == 2
+
+
+def test_batch_persists_tasks_with_and_without_deadlines(client, board, auth_headers):
+    path = f"/boards/{board['id']}/tasks"
+    deadline = "2026-11-30"
+    response = client.post(
+        f"{path}/batch",
+        json={
+            "tasks": [
+                {"title": "Prepare the demo", "deadline": deadline},
+                {"title": "Review the outline"},
+            ]
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 201
+    expected = {"Prepare the demo": deadline, "Review the outline": None}
+    assert {task["title"]: task["deadline"] for task in response.json()} == expected
+
+    read = client.get(path, headers=auth_headers)
+    assert read.status_code == 200
+    assert {task["title"]: task["deadline"] for task in read.json()} == expected
 
 
 @pytest.mark.parametrize(

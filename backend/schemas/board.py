@@ -2,15 +2,18 @@
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
+from datetime import date
 
+from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, Field
+
+BoardDeadline = Annotated[date | None, Field(description="Deadline tablicy")]
 BoardName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=100)]
-
 
 class BoardCreate(BaseModel):
     """Accept a trimmed board name; ownership is assigned by the server."""
 
     name: BoardName
+    deadline: BoardDeadline = None
 
 
 class BoardResponse(BaseModel):
@@ -20,12 +23,14 @@ class BoardResponse(BaseModel):
 
     id: int
     name: str
+    deadline: date | None
 
 
 class BoardUpdate(BaseModel):
     """Allow an omitted name for a no-op PATCH while rejecting explicit null."""
 
     name: BoardName | None = None
+    deadline: BoardDeadline | None = None
 
     @field_validator("name")
     @classmethod

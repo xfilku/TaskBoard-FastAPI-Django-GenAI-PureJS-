@@ -20,9 +20,27 @@ def test_board_owner_comes_from_the_token(client, auth_headers, registered_user,
 
     assert response.status_code == 201
     board = response.json()
-    assert set(board) == {"id", "name"}
+    assert set(board) == {"deadline", "id", "name"}
     assert board["name"] == "New project"
+    assert board["deadline"] is None
     assert db_session.get(Board, board["id"]).owner_id == registered_user["id"]
+
+
+def test_board_creation_persists_deadline(client, auth_headers):
+    deadline = "2026-11-30"
+    response = client.post(
+        "/boards",
+        json={"name": "Project with a deadline", "deadline": deadline},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 201
+    board = response.json()
+    assert board["deadline"] == deadline
+
+    read = client.get(f"/boards/{board['id']}", headers=auth_headers)
+    assert read.status_code == 200
+    assert read.json()["deadline"] == deadline
 
 
 def test_board_lists_are_isolated_between_accounts(
@@ -56,7 +74,7 @@ def test_owner_can_read_edit_and_delete_a_board(client, auth_headers, board, db_
         json={"name": "Renamed project", "owner_id": 999999},
         headers=auth_headers,
     )
-    expected = {"id": board["id"], "name": "Renamed project"}
+    expected = {"id": board["id"], "name": "Renamed project", "deadline": None}
     assert update.status_code == 200
     assert update.json() == expected
     assert client.get(path, headers=auth_headers).json() == expected
@@ -72,6 +90,23 @@ def test_owner_can_read_edit_and_delete_a_board(client, auth_headers, board, db_
     assert deletion.content == b""
     assert client.get(path, headers=auth_headers).status_code == 404
     assert client.delete(path, headers=auth_headers).status_code == 404
+
+
+def test_board_patch_preserves_omitted_deadline_and_clears_explicit_null(client, auth_headers, board):
+    path = f"/boards/{board['id']}"
+    deadline = "2026-11-30"
+    scheduled = client.patch(path, json={"deadline": deadline}, headers=auth_headers)
+    assert scheduled.status_code == 200
+    assert scheduled.json()["deadline"] == deadline
+
+    renamed = client.patch(path, json={"name": "Renamed project"}, headers=auth_headers)
+    assert renamed.status_code == 200
+    assert renamed.json()["deadline"] == deadline
+
+    cleared = client.patch(path, json={"deadline": None}, headers=auth_headers)
+    assert cleared.status_code == 200
+    assert cleared.json()["deadline"] is None
+    assert client.get(path, headers=auth_headers).json()["deadline"] is None
 
 
 @pytest.mark.parametrize("method", ["GET", "PATCH", "DELETE"])
@@ -156,8 +191,14 @@ def test_deleting_a_nonempty_board_preserves_its_data(client, auth_headers, boar
 
 @pytest.mark.parametrize(
     "payload",
-    [{"name": "AB"}, {"name": "x" * 101}, {"name": None}, {}],
-    ids=["too-short", "too-long", "null", "missing"],
+    [
+        {"name": "AB"},
+        {"name": "x" * 101},
+        {"name": None},
+        {},
+        {"name": "New project", "deadline": "2026-02-30"},
+    ],
+    ids=["too-short", "too-long", "null", "missing", "invalid-deadline"],
 )
 def test_invalid_board_creation_is_rejected(client, auth_headers, db_session, payload):
     response = client.post("/boards", json=payload, headers=auth_headers)

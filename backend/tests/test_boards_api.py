@@ -92,7 +92,9 @@ def test_owner_can_read_edit_and_delete_a_board(client, auth_headers, board, db_
     assert client.delete(path, headers=auth_headers).status_code == 404
 
 
-def test_board_patch_preserves_omitted_deadline_and_clears_explicit_null(client, auth_headers, board):
+def test_board_patch_preserves_omitted_deadline_and_clears_explicit_null(
+    client, auth_headers, board
+):
     path = f"/boards/{board['id']}"
     deadline = "2026-11-30"
     scheduled = client.patch(path, json={"deadline": deadline}, headers=auth_headers)

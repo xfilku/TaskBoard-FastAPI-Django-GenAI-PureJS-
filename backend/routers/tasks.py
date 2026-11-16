@@ -45,7 +45,9 @@ def create_tasks(
     tasks = []
 
     for task in data.tasks:
-        tasks.append(Task(title=task.title, board_id=board.id, is_done=False, deadline=task.deadline))
+        tasks.append(
+            Task(title=task.title, board_id=board.id, is_done=False, deadline=task.deadline)
+        )
 
     db.add_all(tasks)
     db.flush()

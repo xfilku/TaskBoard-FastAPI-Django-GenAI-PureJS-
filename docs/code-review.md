@@ -14,7 +14,7 @@ Reviewed scope: the FastAPI backend, Django frontend, templates, static assets, 
 | Registration used the login form and missed the API's password minimum.       | Add a registration form with the same existing minimum.                                                                                       |
 | API fields accepted whitespace-only content.                                  | Trim names and titles before length validation, including PATCH requests.                                                                     |
 | Table setup and learning scripts wrote data during import.                    | Move execution behind documented entry points; repair the SQLite INSERT placeholder and target newly created sample rows.                     |
-| Generated Python cache and local database files were tracked.                 | Add ignore rules. Previously tracked generated artifacts still require removal from the Git index before publication.                         |
+| Generated Python cache and local database files were tracked.                 | Remove generated artifacts from the current source tree and add ignore rules for local files.                                                 |
 | Python formatting and documentation were inconsistent.                        | Add production docstrings, useful type annotations, Ruff rules, template formatting, static-file formatting and continuous integration.       |
 | A clean checkout lacked setup instructions and dependency manifests.          | Add pinned direct dependencies, `.env.example`, a safe setup script and README commands.                                                      |
 
@@ -26,8 +26,6 @@ The interface is also checked in a real browser against isolated development dat
 
 ## Remaining work before public hosting
 
-Strengthen the account password policy, add login rate limiting and plan password recovery. Introduce versioned API database migrations. Deployment still needs an HTTPS and static-file configuration, production servers and an environment-specific review. These are separate from publishing the source as a portfolio project.
+Strengthen the account password policy, add login rate limiting and plan password recovery. Deployment still needs HTTPS and static-file configuration, production servers and an environment-specific review.
 
-Git ignore rules affect the current tree, not earlier commits. Previously committed databases remain in Git history. Review that history before publication if it could contain personal or sensitive data; no history rewrite was performed as part of this review.
-
-Current index cleanup remains necessary for the original `.pyc` and `.db` entries. Remove these entries from version control while preserving local databases before publishing the source.
+Earlier commits contain SQLite snapshots from the initial development work. The current source tree excludes local databases and caches.

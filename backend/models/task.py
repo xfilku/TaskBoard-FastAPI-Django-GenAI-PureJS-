@@ -1,8 +1,9 @@
 """Persist tasks and their parent board references."""
 
-from database import Base
-from sqlalchemy import ForeignKey, Date
 from datetime import date
+
+from database import Base
+from sqlalchemy import Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 

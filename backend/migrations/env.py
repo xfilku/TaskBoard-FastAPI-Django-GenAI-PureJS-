@@ -1,10 +1,9 @@
+"""Configure Alembic with the TaskBoard engine and ORM metadata."""
+
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from create_tables import Base, engine
-
 from alembic import context
+from create_tables import Base, engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -58,11 +57,8 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-
     with engine.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -1,14 +1,12 @@
 """Validate task creation and partial updates without accepting board reassignment."""
 
-from typing import Annotated
-
 from datetime import date
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 TaskTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=300)]
 TaskDeadline = Annotated[date | None, Field(description="Deadline tablicy")]
-
 
 
 class TaskCreate(BaseModel):

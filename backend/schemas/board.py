@@ -1,13 +1,13 @@
 """Validate board payloads and define their public API representation."""
 
+from datetime import date
 from typing import Annotated
 
-from datetime import date
-
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 BoardDeadline = Annotated[date | None, Field(description="Deadline tablicy")]
 BoardName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=100)]
+
 
 class BoardCreate(BaseModel):
     """Accept a trimmed board name; ownership is assigned by the server."""

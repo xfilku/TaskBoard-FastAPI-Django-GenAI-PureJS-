@@ -1,4 +1,4 @@
-"""Resolve and validate the configured AI provider for each planning request."""
+"""Resolve the configured model adapters for planning and chat."""
 
 import math
 import os
@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 from fastapi import HTTPException
 
+from ai.chat.chat_model import ChatModel
 from ai.demo import DemoTextModel
 from ai.model import TextModel
 from ai.providers.ollama import OllamaTextModel
@@ -36,3 +37,11 @@ def get_text_model() -> TextModel:
     if not model_name or not valid_url or not valid_timeout:
         raise HTTPException(503, "Uzupełnij konfigurację lokalnego modelu AI.")
     return OllamaTextModel(base_url=base_url, model_name=model_name, timeout=timeout)
+
+
+def get_chat_model() -> ChatModel:
+    """Resolve the Ollama adapter, or report that task chat is unavailable."""
+    model = get_text_model()
+    if isinstance(model, OllamaTextModel):
+        return model
+    raise HTTPException(503, "Czat wymaga skonfigurowania modelu Ollama.")

@@ -159,7 +159,11 @@ def create_board_page(request: HttpRequest) -> HttpResponse:
     form = BoardCreateForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
         try:
-            create_board(form.cleaned_data["name"], request.session["access_token"])
+            create_board(
+                form.cleaned_data["name"],
+                request.session["access_token"],
+                deadline=form.cleaned_data["deadline"],
+            )
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 401:
                 return _expired_session(request)
@@ -179,7 +183,9 @@ def board_detail_page(request: HttpRequest, board_id: int) -> HttpResponse:
     form = CreateTaskForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
         try:
-            create_task(board_id, form.cleaned_data["title"], token)
+            create_task(
+                board_id, form.cleaned_data["title"], token, deadline=form.cleaned_data["deadline"]
+            )
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 401:
                 return _expired_session(request)
@@ -278,8 +284,11 @@ def edit_task_page(request: HttpRequest, board_id: int, task_id: int) -> HttpRes
     if request.method == "POST":
         form = CreateTaskForm(request.POST)
         if form.is_valid():
+            changes = {"title": form.cleaned_data["title"]}
+            if "deadline" in request.POST:
+                changes["deadline"] = form.cleaned_data["deadline"]
             try:
-                patch_task(board_id, task_id, {"title": form.cleaned_data["title"]}, token)
+                patch_task(board_id, task_id, changes, token)
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 401:
                     return _expired_session(request)
@@ -301,7 +310,7 @@ def edit_task_page(request: HttpRequest, board_id: int, task_id: int) -> HttpRes
         except httpx.RequestError:
             messages.error(request, CONNECTION_ERROR)
             return redirect("board_detail", board_id=board_id)
-        form = CreateTaskForm(initial={"title": task["title"]})
+        form = CreateTaskForm(initial={"title": task["title"], "deadline": task.get("deadline")})
     return render(request, "pages/edit_task.html", {"edit_task_form": form}, status=status)
 
 
@@ -458,7 +467,7 @@ def save_plan_page(request: HttpRequest, board_id: int) -> HttpResponse:
     status = 200
     if suggestions.is_valid():
         tasks = [
-            {"title": row["title"]}
+            {"title": row["title"], "deadline": row["deadline"]}
             for row in suggestions.cleaned_data
             if row and not row.get("DELETE")
         ]

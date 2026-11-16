@@ -1,4 +1,4 @@
-<div class="form-field">
+<div class="form-field{% if field_class %} {{ field_class }}{% endif %}">
     <label for="{{ field.id_for_label }}">{{ label|default:field.label }}</label>
     <div class="input-wrap">
         <input id="{{ field.id_for_label }}"
@@ -6,7 +6,7 @@
                type="{{ type|default:'text' }}"
                {% if type != 'password' %}value="{{ field.value|default_if_none:'' }}"{% else %}data-password{% endif %}
                autocomplete="{{ autocomplete|default:'off' }}"
-               placeholder="{{ placeholder|default:'' }}"
+               {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
                {% if field.field.required %}required{% endif %}
                {% if field.field.min_length %}minlength="{{ field.field.min_length }}"{% endif %}
                {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %}

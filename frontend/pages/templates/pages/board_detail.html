@@ -74,6 +74,7 @@
                         {% endif %}
                         <div class="composer-fields">
                             {% include "pages/_form_field.html" with field=task_form.title label="Treść nowego zadania" placeholder="Zapisz swój następny krok…" %}
+                            {% include "pages/_form_field.html" with field=task_form.deadline type="date" field_class="composer-deadline" %}
                             <button class="btn btn-primary" type="submit">
                                 <svg class="icon" aria-hidden="true">
                                     <use href="#i-plus" />
@@ -144,6 +145,14 @@
                                                 Zrobione
                                             {% else %}
                                                 Do zrobienia
+                                            {% endif %}
+                                        </span>
+                                        <span aria-hidden="true">/</span>
+                                        <span>
+                                            {% if task.deadline %}
+                                                Termin: <time datetime="{{ task.deadline }}">{{ task.deadline }}</time>
+                                            {% else %}
+                                                Termin nie został określony
                                             {% endif %}
                                         </span>
                                     </div>

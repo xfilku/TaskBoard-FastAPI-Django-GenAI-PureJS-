@@ -34,7 +34,7 @@ async function generatePlan(page) {
   await expect(page.locator("[data-ai-suggestion]")).toHaveCount(5);
 }
 
-test("generated tasks require review, retain edits and save only selected titles", async ({
+test("generated tasks require review and save selected edits and deadlines", async ({
   page,
   request,
 }) => {
@@ -54,9 +54,14 @@ test("generated tasks require review, retain edits and save only selected titles
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(await before.json()).toEqual([]);
-  await page
-    .locator("#id_form-0-title")
-    .fill("Moje dopracowane zadanie z planu AI");
+  const editedTask = page.locator("[data-ai-suggestion]").first();
+  const title = editedTask.getByLabel("Zadanie 1", { exact: true });
+  const deadline = editedTask.getByLabel("Termin", { exact: true });
+  await expect(title).toHaveCSS("border-top-style", "solid");
+  await expect(deadline).toBeVisible();
+  await expect(deadline).toHaveAttribute("type", "date");
+  await title.fill("Moje dopracowane zadanie z planu AI");
+  await deadline.fill("2026-11-30");
   await page.locator("#id_form-1-DELETE").check();
   await expect(page.locator("[data-ai-selected-count]")).toHaveText("4");
   await expect(page.locator("[data-ai-suggestion]").nth(1)).toHaveClass(
@@ -68,10 +73,21 @@ test("generated tasks require review, retain edits and save only selected titles
   await expect(page.locator(".task-title").first()).toHaveText(
     "Moje dopracowane zadanie z planu AI",
   );
+  await expect(page.locator("article.task-row time")).toHaveAttribute(
+    "datetime",
+    "2026-11-30",
+  );
   const after = await request.get(apiURL, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  expect((await after.json()).length).toBe(4);
+  const savedTasks = await after.json();
+  expect(savedTasks).toHaveLength(4);
+  expect(savedTasks).toContainEqual(
+    expect.objectContaining({
+      title: "Moje dopracowane zadanie z planu AI",
+      deadline: "2026-11-30",
+    }),
+  );
 });
 
 test("generation exposes its waiting state and blocks duplicate submissions", async ({
@@ -129,7 +145,7 @@ test("an empty selection shows feedback without adding tasks", async ({
 test("AI views fit mobile, tablet and desktop and respect reduced motion", async ({
   page,
 }) => {
-  await createWorkspace(page);
+  const { boardPath } = await createWorkspace(page);
   const planPath = new URL(page.url()).pathname;
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [320, 390, 768, 1024, 1440]) {
@@ -157,6 +173,18 @@ test("AI views fit mobile, tablet and desktop and respect reduced motion", async
     ).toBeTruthy();
     await expect(page.locator("[data-ai-save]")).toBeEnabled();
   }
+  await page.goto(boardPath);
+  const fields = page.locator(".composer-fields");
+  const title = fields.getByLabel("Treść nowego zadania", { exact: true });
+  const deadline = fields.getByLabel("Termin", { exact: true });
+  expect((await title.boundingBox()).width).toBeGreaterThan(
+    (await deadline.boundingBox()).width,
+  );
+  await page.setViewportSize({ width: 320, height: 900 });
+  const titleBox = await title.boundingBox();
+  expect((await deadline.boundingBox()).y).toBeGreaterThanOrEqual(
+    titleBox.y + titleBox.height,
+  );
 });
 
 test.describe("Without JavaScript", () => {

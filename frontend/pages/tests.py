@@ -116,6 +116,25 @@ class ProtectedViewTests(TestCase):
             self.assertEqual(response.status_code, 302)
             api.assert_called_once_with(1, 2, {"is_done": expected}, "test-session-token")
 
+    def test_task_edit_serializes_optional_deadline(self):
+        response = httpx.Response(
+            200, json={"id": 2}, request=httpx.Request("PATCH", "http://api.test/boards/1/tasks/2")
+        )
+        url = reverse("edit_task", args=[1, 2])
+        for posted_date, expected in (
+            ({"deadline": "2026-11-30"}, {"deadline": "2026-11-30"}),
+            ({"deadline": ""}, {"deadline": None}),
+            ({}, {}),
+        ):
+            with self.subTest(posted_date=posted_date):
+                with patch("pages.api_client.httpx.request", return_value=response) as request:
+                    result = self.client.post(url, {"title": "Updated task title", **posted_date})
+
+                self.assertEqual(result.status_code, 302)
+                self.assertEqual(
+                    request.call_args.kwargs["json"], {"title": "Updated task title", **expected}
+                )
+
     def test_invalid_task_form_never_calls_api_write(self):
         with (
             patch("pages.views.create_task") as api,

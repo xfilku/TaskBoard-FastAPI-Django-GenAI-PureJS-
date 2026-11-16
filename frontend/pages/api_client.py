@@ -6,6 +6,7 @@ translate them into form errors, messages or a redirect to the login page.
 
 import math
 import os
+from datetime import date
 from typing import Any
 
 import httpx
@@ -35,6 +36,25 @@ def _request(
     return response
 
 
+def _serialize_deadline(payload: dict[str, Any]) -> dict[str, Any]:
+    """Convert a Python date to ISO format while preserving null and omitted fields."""
+    deadline = payload.get("deadline")
+    if isinstance(deadline, date):
+        return {**payload, "deadline": deadline.isoformat()}
+    return payload
+
+
+def _planning_timeout() -> float:
+    """Allow the API's configured model timeout plus a bounded network margin."""
+    try:
+        timeout = float(os.getenv("TASKBOARD_AI_TIMEOUT", "60"))
+    except ValueError:
+        timeout = 60.0
+    if not math.isfinite(timeout):
+        timeout = 60.0
+    return min(max(timeout, 1.0), 300.0) + 15.0
+
+
 def login_user(email: str, password: str) -> dict[str, Any]:
     """Exchange credentials for a short-lived access token."""
     return _request("POST", "users/login", payload={"email": email, "password": password}).json()
@@ -50,9 +70,10 @@ def get_boards(access_token: str) -> list[dict[str, Any]]:
     return _request("GET", "boards", access_token).json()
 
 
-def create_board(name: str, access_token: str) -> dict[str, Any]:
-    """Create a board owned by the authenticated account."""
-    return _request("POST", "boards", access_token, {"name": name}).json()
+def create_board(name: str, access_token: str, deadline: date | None = None) -> dict[str, Any]:
+    """Create a board for the authenticated account with an optional deadline."""
+    payload = _serialize_deadline({"name": name, "deadline": deadline})
+    return _request("POST", "boards", access_token, payload).json()
 
 
 def get_board(board_id: int, access_token: str) -> dict[str, Any]:
@@ -65,9 +86,12 @@ def get_board_tasks(board_id: int, access_token: str) -> list[dict[str, Any]]:
     return _request("GET", f"boards/{board_id}/tasks", access_token).json()
 
 
-def create_task(board_id: int, title: str, access_token: str) -> dict[str, Any]:
-    """Add an unfinished task to a board."""
-    return _request("POST", f"boards/{board_id}/tasks", access_token, {"title": title}).json()
+def create_task(
+    board_id: int, title: str, access_token: str, deadline: date | None = None
+) -> dict[str, Any]:
+    """Add an unfinished task to a board with an optional deadline."""
+    payload = _serialize_deadline({"title": title, "deadline": deadline})
+    return _request("POST", f"boards/{board_id}/tasks", access_token, payload).json()
 
 
 def delete_task(board_id: int, task_id: int, access_token: str) -> None:
@@ -79,7 +103,8 @@ def patch_task(
     board_id: int, task_id: int, changes: dict[str, Any], access_token: str
 ) -> dict[str, Any]:
     """Update only the task fields supplied in changes."""
-    return _request("PATCH", f"boards/{board_id}/tasks/{task_id}", access_token, changes).json()
+    payload = _serialize_deadline(changes)
+    return _request("PATCH", f"boards/{board_id}/tasks/{task_id}", access_token, payload).json()
 
 
 def get_task(board_id: int, task_id: int, access_token: str) -> dict[str, Any]:
@@ -90,17 +115,6 @@ def get_task(board_id: int, task_id: int, access_token: str) -> dict[str, Any]:
 def delete_board(board_id: int, access_token: str) -> None:
     """Delete an empty board; the API rejects boards that still contain tasks."""
     _request("DELETE", f"boards/{board_id}", access_token)
-
-
-def _planning_timeout() -> float:
-    """Allow the API's configured model timeout plus a bounded network margin."""
-    try:
-        timeout = float(os.getenv("TASKBOARD_AI_TIMEOUT", "60"))
-    except ValueError:
-        timeout = 60.0
-    if not math.isfinite(timeout):
-        timeout = 60.0
-    return min(max(timeout, 1.0), 300.0) + 15.0
 
 
 def preview_plan(
@@ -117,7 +131,8 @@ def preview_plan(
 
 
 def create_tasks_batch(
-    board_id: int, tasks: list[dict[str, str]], access_token: str
+    board_id: int, tasks: list[dict[str, str | date | None]], access_token: str
 ) -> list[dict[str, Any]]:
     """Persist only the reviewed tasks selected by the user in one API transaction."""
-    return _request("POST", f"boards/{board_id}/tasks/batch", access_token, {"tasks": tasks}).json()
+    payload = {"tasks": [_serialize_deadline(task) for task in tasks]}
+    return _request("POST", f"boards/{board_id}/tasks/batch", access_token, payload).json()

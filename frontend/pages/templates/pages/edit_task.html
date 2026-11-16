@@ -41,9 +41,13 @@
                         </div>
                     {% endif %}
                     {% include "pages/_form_field.html" with field=edit_task_form.title label="Treść zadania" placeholder="Co chcesz zrobić…" %}
-                    <div class="field-meta">
+                    <div class="field-meta" style="margin-bottom: 15px">
                         <span>Od 5 do 300 znaków.</span>
                         <span class="field-counter" data-char-count>0 / 300</span>
+                    </div>
+                    {% include "pages/_form_field.html" with field=edit_task_form.deadline type="date" %}
+                    <div class="field-meta">
+                        <span>Możesz zostawić to pole puste.</span>
                     </div>
                     <div class="editor-actions">
                         <a class="btn btn-secondary"

@@ -18,15 +18,21 @@ class RegisterForm(LoginForm):
 
 
 class BoardCreateForm(forms.Form):
-    """Validate a board name using the API's length limits."""
+    """Validate a board name and an optional deadline."""
 
     name = forms.CharField(label="Nazwa tablicy", min_length=3, max_length=100)
+    deadline = forms.DateField(required=False, label="Termin")
 
 
 class CreateTaskForm(forms.Form):
-    """Validate a task title for both creation and editing."""
+    """Validate a task title and an optional deadline for creation and editing."""
 
     title = forms.CharField(label="Tytuł zadania", min_length=5, max_length=300)
+    deadline = forms.DateField(
+        required=False,
+        label="Termin",
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+    )
 
 
 class PlanPreviewForm(forms.Form):

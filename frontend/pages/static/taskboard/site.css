@@ -1491,6 +1491,9 @@ button:disabled {
   min-width: 0;
   margin: 0;
 }
+.composer-fields .composer-deadline {
+  flex: 0 0 11rem;
+}
 .composer-fields .form-field input {
   min-height: 44px;
 }
@@ -2863,7 +2866,10 @@ dialog h2 {
 }
 .composer-fields .form-field input,
 .composer-fields .btn {
-  min-height: 50px;
+  min-height: 54px;
+}
+.composer-fields .form-field input {
+  padding-block: 12px;
 }
 .composer-fields .btn {
   padding: 12px 18px;
@@ -3885,10 +3891,9 @@ dialog {
   display: block;
   width: 100%;
   min-height: 60px;
-  padding: 0 0 6px;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  border-radius: 2px;
+  padding: 10px 12px;
+  border: 1px solid #718b5e;
+  border-radius: 8px;
   resize: vertical;
   color: #2a3c2d;
   background: transparent;
@@ -3899,7 +3904,15 @@ dialog {
 }
 .ai-suggestion-input:focus {
   outline: 2px solid #718b5e;
-  outline-offset: 4px;
+  outline-offset: 2px;
+}
+.ai-suggestion-deadline {
+  max-width: 11rem;
+  margin: 14px 0 0;
+}
+.ai-suggestion-deadline input {
+  min-height: 44px;
+  padding: 9px 12px;
 }
 .ai-skip-toggle {
   display: inline-flex;

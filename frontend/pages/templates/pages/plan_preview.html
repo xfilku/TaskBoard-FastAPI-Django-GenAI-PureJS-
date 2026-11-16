@@ -259,6 +259,20 @@
                                                     </ul>
                                                 </div>
                                             {% endif %}
+                                            <div class="form-field ai-suggestion-deadline">
+                                                <label for="{{ suggestion.deadline.id_for_label }}">{{ suggestion.deadline.label }}</label>
+                                                {{ suggestion.deadline }}
+                                                {% if suggestion.deadline.errors %}
+                                                    <div role="alert">
+                                                        <ul class="field-errors"
+                                                            id="{{ suggestion.deadline.id_for_label }}_error">
+                                                            {% for error in suggestion.deadline.errors %}
+                                                                <li>{{ error }}</li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                         <label class="ai-skip-toggle"
                                                for="{{ suggestion.DELETE.id_for_label }}">

@@ -1,5 +1,6 @@
 """Test planning forms, ownership feedback, review selection and batch-save failures."""
 
+from datetime import date
 from unittest.mock import patch
 
 import httpx
@@ -180,15 +181,24 @@ class AIPlanningViewTests(TestCase):
         self.assertNotContains(response, title)
         self.assertContains(response, "&lt;script&gt;")
 
-    def test_only_reviewed_selected_titles_are_saved(self):
-        data = suggestion_data(["  Edited first task  ", "Skipped second task"], skipped=(1,))
+    def test_only_reviewed_selected_tasks_are_saved_with_optional_deadlines(self):
+        data = suggestion_data(
+            ["  Edited first task  ", "Skipped second task", "Task without deadline"], skipped=(1,)
+        )
+        data["form-0-deadline"] = "2026-11-30"
+        data["form-1-deadline"] = "2026-12-01"
         with patch("pages.views.create_tasks_batch", return_value=[{"id": 1}]) as save:
             response = self.client.post(self.save_url, data)
         self.assertRedirects(
             response, reverse("board_detail", args=[1]), fetch_redirect_response=False
         )
         save.assert_called_once_with(
-            board_id=1, tasks=[{"title": "Edited first task"}], access_token="test-token"
+            board_id=1,
+            tasks=[
+                {"title": "Edited first task", "deadline": date(2026, 11, 30)},
+                {"title": "Task without deadline", "deadline": None},
+            ],
+            access_token="test-token",
         )
 
     def test_all_skipped_or_empty_selection_never_saves(self):
@@ -309,9 +319,12 @@ class AIClientTests(SimpleTestCase):
             201, request=httpx.Request("POST", "http://api.test/batch"), json=[{"id": 3}]
         )
         with patch("pages.api_client.httpx.request", return_value=response) as request:
-            result = api_client.create_tasks_batch(7, [{"title": "Chosen task title"}], "token")
+            result = api_client.create_tasks_batch(
+                7, [{"title": "Chosen task title", "deadline": date(2026, 11, 30)}], "token"
+            )
         self.assertEqual(result, [{"id": 3}])
         self.assertEqual(request.call_args.kwargs["timeout"], 5)
         self.assertEqual(
-            request.call_args.kwargs["json"], {"tasks": [{"title": "Chosen task title"}]}
+            request.call_args.kwargs["json"],
+            {"tasks": [{"title": "Chosen task title", "deadline": "2026-11-30"}]},
         )
